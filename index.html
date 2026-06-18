@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VALSEA · Speech-to-Text Demo</title>
+  <style>
+    :root {
+      --purple-50: #faf5ff;
+      --purple-100: #f3e8ff;
+      --purple-200: #e9d5ff;
+      --purple-400: #c084fc;
+      --purple-500: #a855f7;
+      --purple-600: #9333ea;
+      --purple-700: #7e22ce;
+      --purple-800: #6b21a8;
+      --purple-900: #581c87;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
+      --red-500: #ef4444;
+      --green-500: #22c55e;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(107, 33, 168, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(160deg, var(--purple-50) 0%, #fff 40%, var(--gray-50) 100%);
+      color: var(--gray-800);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 640px;
+    }
+
+    /* Header / Branding */
+    .brand {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .brand-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--purple-600), var(--purple-800));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .brand-name {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--purple-800);
+    }
+
+    .brand-sub {
+      font-size: 0.85rem;
+      color: var(--gray-500);
+      letter-spacing: 0.02em;
+    }
+
+    /* Card */
+    .card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--purple-100);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--purple-600);
+      margin-bottom: 0.5rem;
+    }
+
+    /* Token input */
+    .token-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .token-input {
+      flex: 1;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-family: "SF Mono", "Fira Code", monospace;
+      color: var(--gray-800);
+      background: var(--gray-50);
+      transition: border-color 0.2s;
+    }
+
+    .token-input:focus {
+      outline: none;
+      border-color: var(--purple-400);
+      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+    }
+
+    .toggle-vis {
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      background: var(--gray-50);
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--gray-600);
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+
+    .toggle-vis:hover { background: var(--purple-50); }
+
+    /* Model toggle */
+    .model-toggle {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      background: var(--gray-100);
+      border-radius: 10px;
+      padding: 4px;
+    }
+
+    .model-btn {
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: transparent;
+      text-align: left;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .model-btn.active {
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .model-btn .name {
+      font-weight: 600;
+      font-size: 0.82rem;
+      color: var(--gray-800);
+      display: block;
+    }
+
+    .model-btn.active .name { color: var(--purple-800); }
+
+    .model-btn .desc {
+      font-size: 0.75rem;
+      color: var(--gray-500);
+      margin-top: 2px;
+      display: block;
+    }
+
+    /* Mic section */
+    .mic-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem 0 0.5rem;
+    }
+
+    .mic-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--purple-600), var(--purple-800));
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(107, 33, 168, 0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+      position: relative;
+    }
+
+    .mic-btn:hover { transform: scale(1.05); }
+    .mic-btn:active { transform: scale(0.97); }
+
+    .mic-btn.recording {
+      background: linear-gradient(135deg, var(--red-500), #dc2626);
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 4px 32px rgba(239, 68, 68, 0.65); }
+    }
+
+    .mic-btn svg { width: 32px; height: 32px; }
+
+    .mic-hint {
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--gray-500);
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--gray-500);
+      min-height: 1.25rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gray-400);
+      flex-shrink: 0;
+    }
+
+    .status-dot.active { background: var(--green-500); }
+    .status-dot.error { background: var(--red-500); }
+    .status-dot.loading { background: var(--purple-500); animation: blink 1s infinite; }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Transcript */
+    .transcript-box {
+      min-height: 160px;
+      max-height: 320px;
+      overflow-y: auto;
+      padding: 1rem;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: 1rem;
+      line-height: 1.65;
+      color: var(--gray-800);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .transcript-box.empty {
+      color: var(--gray-400);
+      font-style: italic;
+    }
+
+    .transcript-box .pending {
+      color: var(--purple-400);
+      font-style: italic;
+    }
+
+    .transcript-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 0.5rem;
+    }
+
+    .clear-btn {
+      padding: 0.35rem 0.75rem;
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+      background: #fff;
+      font-size: 0.78rem;
+      color: var(--gray-500);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .clear-btn:hover {
+      border-color: var(--purple-200);
+      color: var(--purple-700);
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.75rem;
+      color: var(--gray-400);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="brand">
+      <div class="brand-logo">
+        <div class="brand-icon">V</div>
+        <span class="brand-name">VALSEA</span>
+      </div>
+      <p class="brand-sub">Speech-to-Text Demo</p>
+    </header>
+
+    <div class="card">
+      <div class="card-label">Hugging Face API Token</div>
+      <div class="token-row">
+        <input
+          type="password"
+          id="hfToken"
+          class="token-input"
+          value="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"
+          placeholder="hf_..."
+          autocomplete="off"
+        />
+        <button class="toggle-vis" id="toggleHfToken" type="button">Show</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Replicate API Token</div>
+      <div class="token-row">
+        <input
+          type="password"
+          id="replicateToken"
+          class="token-input"
+          placeholder="r8_..."
+          autocomplete="off"
+        />
+        <button class="toggle-vis" id="toggleReplicateToken" type="button">Show</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">ElevenLabs API Key</div>
+      <div class="token-row">
+        <input
+          type="password"
+          id="elevenLabsKey"
+          class="token-input"
+          placeholder="sk_..."
+          autocomplete="off"
+        />
+        <button class="toggle-vis" id="toggleElevenLabsKey" type="button">Show</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Model</div>
+      <div class="model-toggle">
+        <button class="model-btn active" data-model="0.6b" type="button">
+          <span class="name">Parakeet 0.6b</span>
+          <span class="desc">Faster, lighter</span>
+        </button>
+        <button class="model-btn" data-model="1.1b" type="button">
+          <span class="name">Parakeet 1.1b</span>
+          <span class="desc">More accurate, heavier</span>
+        </button>
+        <button class="model-btn" data-model="scribe_v2" type="button">
+          <span class="name">ElevenLabs Scribe v2</span>
+          <span class="desc">High accuracy STT</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="mic-section">
+        <button class="mic-btn" id="micBtn" type="button" aria-label="Start recording">
+          <svg id="micIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+          <svg id="stopIcon" viewBox="0 0 24 24" fill="currentColor" style="display:none; width:28px; height:28px;">
+            <rect x="6" y="6" width="12" height="12" rx="2"/>
+          </svg>
+        </button>
+        <p class="mic-hint" id="micHint">Tap to start recording</p>
+        <div class="status-bar">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Ready</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Live Transcript</div>
+      <div class="transcript-box empty" id="transcript">Your transcript will appear here as you speak…</div>
+      <div class="transcript-actions">
+        <button class="clear-btn" id="clearBtn" type="button">Clear</button>
+      </div>
+    </div>
+
+    <footer>Powered by NVIDIA Parakeet on Replicate &amp; ElevenLabs Scribe</footer>
+  </div>
+
+  <script>
+    const REPLICATE_PREDICTIONS_URL = 'https://api.replicate.com/v1/predictions';
+    const REPLICATE_MODELS = {
+      '0.6b': 'nvidia/parakeet-tdt-0.6b-v2',
+      '1.1b': 'nvidia/parakeet-tdt-1.1b',
+    };
+
+    const ELEVENLABS_STT_URL = 'https://api.elevenlabs.io/v1/speech-to-text';
+
+    const CHUNK_INTERVAL_MS = 3000;
+    const TARGET_SAMPLE_RATE = 16000;
+
+    let selectedModel = '0.6b';
+    let isRecording = false;
+    let mediaStream = null;
+    let audioContext = null;
+    let sourceNode = null;
+    let processorNode = null;
+    let recordedChunks = [];
+    let chunkTimer = null;
+    let pendingRequests = 0;
+    let transcriptParts = [];
+
+    const hfToken = document.getElementById('hfToken');
+    const toggleHfToken = document.getElementById('toggleHfToken');
+    const replicateToken = document.getElementById('replicateToken');
+    const toggleReplicateToken = document.getElementById('toggleReplicateToken');
+    const elevenLabsKey = document.getElementById('elevenLabsKey');
+    const toggleElevenLabsKey = document.getElementById('toggleElevenLabsKey');
+    const modelBtns = document.querySelectorAll('.model-btn');
+    const micBtn = document.getElementById('micBtn');
+    const micIcon = document.getElementById('micIcon');
+    const stopIcon = document.getElementById('stopIcon');
+    const micHint = document.getElementById('micHint');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const transcriptEl = document.getElementById('transcript');
+    const clearBtn = document.getElementById('clearBtn');
+
+    function bindTokenToggle(input, button) {
+      button.addEventListener('click', () => {
+        const hidden = input.type === 'password';
+        input.type = hidden ? 'text' : 'password';
+        button.textContent = hidden ? 'Hide' : 'Show';
+      });
+    }
+
+    bindTokenToggle(hfToken, toggleHfToken);
+    bindTokenToggle(replicateToken, toggleReplicateToken);
+    bindTokenToggle(elevenLabsKey, toggleElevenLabsKey);
+
+    // Model selection
+    modelBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (isRecording) return;
+        modelBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedModel = btn.dataset.model;
+      });
+    });
+
+    clearBtn.addEventListener('click', () => {
+      transcriptParts = [];
+      renderTranscript();
+    });
+
+    micBtn.addEventListener('click', () => {
+      if (isRecording) stopRecording();
+      else startRecording();
+    });
+
+    function setStatus(text, state = '') {
+      statusText.textContent = text;
+      statusDot.className = 'status-dot' + (state ? ' ' + state : '');
+    }
+
+    function renderTranscript() {
+      if (transcriptParts.length === 0 && pendingRequests === 0) {
+        transcriptEl.textContent = 'Your transcript will appear here as you speak…';
+        transcriptEl.classList.add('empty');
+        return;
+      }
+      transcriptEl.classList.remove('empty');
+      let html = transcriptParts.map(t => escapeHtml(t)).join(' ');
+      if (pendingRequests > 0) {
+        html += ' <span class="pending">…</span>';
+      }
+      transcriptEl.innerHTML = html;
+      transcriptEl.scrollTop = transcriptEl.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    // Encode Float32 PCM samples as 16-bit mono WAV
+    function encodeWAV(samples, sampleRate) {
+      const buffer = new ArrayBuffer(44 + samples.length * 2);
+      const view = new DataView(buffer);
+
+      const writeStr = (offset, str) => {
+        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+      };
+
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + samples.length * 2, true);
+      writeStr(8, 'WAVE');
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeStr(36, 'data');
+      view.setUint32(40, samples.length * 2, true);
+
+      let offset = 44;
+      for (let i = 0; i < samples.length; i++, offset += 2) {
+        const s = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+      }
+      return buffer;
+    }
+
+    // Downsample mono Float32 PCM to 16 kHz
+    function downsample(input, inputSampleRate) {
+      if (inputSampleRate === TARGET_SAMPLE_RATE) return input;
+
+      const ratio = inputSampleRate / TARGET_SAMPLE_RATE;
+      const newLength = Math.round(input.length / ratio);
+      const result = new Float32Array(newLength);
+
+      for (let i = 0; i < newLength; i++) {
+        const idx = i * ratio;
+        const idxFloor = Math.floor(idx);
+        const frac = idx - idxFloor;
+        const s0 = input[idxFloor] || 0;
+        const s1 = input[idxFloor + 1] || s0;
+        result[i] = s0 + frac * (s1 - s0);
+      }
+      return result;
+    }
+
+    function mergeFloat32Arrays(arrays) {
+      const total = arrays.reduce((sum, a) => sum + a.length, 0);
+      const result = new Float32Array(total);
+      let offset = 0;
+      for (const arr of arrays) {
+        result.set(arr, offset);
+        offset += arr.length;
+      }
+      return result;
+    }
+
+    function wavToDataUrl(wavBuffer) {
+      const bytes = new Uint8Array(wavBuffer);
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+      }
+      return `data:audio/wav;base64,${btoa(binary)}`;
+    }
+
+    async function createReplicatePrediction(version, audioUrl, token) {
+      const response = await fetch(REPLICATE_PREDICTIONS_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Prefer: 'wait=60',
+        },
+        body: JSON.stringify({
+          version,
+          input: { audio: audioUrl },
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.detail || err.error || `Replicate API error ${response.status}`);
+      }
+
+      return response.json();
+    }
+
+    async function pollReplicatePrediction(getUrl, token, maxAttempts = 60) {
+      for (let i = 0; i < maxAttempts; i++) {
+        await sleep(2000);
+        const response = await fetch(getUrl, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.detail || `Replicate API error ${response.status}`);
+        }
+        const prediction = await response.json();
+        if (['succeeded', 'failed', 'canceled'].includes(prediction.status)) {
+          return prediction;
+        }
+        if (i % 3 === 0) setStatus('Transcribing…', 'loading');
+      }
+      throw new Error('Replicate prediction timed out');
+    }
+
+    async function transcribeAudio(wavBuffer) {
+      if (selectedModel === 'scribe_v2') {
+        return transcribeElevenLabs(wavBuffer);
+      }
+      return transcribeReplicate(wavBuffer);
+    }
+
+    async function transcribeReplicate(wavBuffer) {
+      const token = replicateToken.value.trim();
+      if (!token) throw new Error('Please enter your Replicate API token.');
+
+      const version = REPLICATE_MODELS[selectedModel];
+      const audioUrl = wavToDataUrl(wavBuffer);
+
+      let prediction = await createReplicatePrediction(version, audioUrl, token);
+
+      if (!['succeeded', 'failed', 'canceled'].includes(prediction.status)) {
+        prediction = await pollReplicatePrediction(prediction.urls.get, token);
+      }
+
+      if (prediction.status === 'failed') {
+        throw new Error(prediction.error || 'Replicate prediction failed');
+      }
+      if (prediction.status === 'canceled') {
+        throw new Error('Replicate prediction was canceled');
+      }
+
+      return extractText(prediction.output);
+    }
+
+    async function transcribeElevenLabs(wavBuffer) {
+      const apiKey = elevenLabsKey.value.trim();
+      if (!apiKey) throw new Error('Please enter your ElevenLabs API key.');
+
+      const blob = new Blob([wavBuffer], { type: 'audio/wav' });
+      const formData = new FormData();
+      formData.append('file', blob, 'recording.wav');
+      formData.append('model_id', 'scribe_v2');
+
+      const response = await fetch(ELEVENLABS_STT_URL, {
+        method: 'POST',
+        headers: {
+          'xi-api-key': apiKey,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        const message = err.detail?.message
+          || (typeof err.detail === 'string' ? err.detail : null)
+          || err.message
+          || `API error ${response.status}`;
+        throw new Error(message);
+      }
+
+      const data = await response.json();
+      return extractText(data);
+    }
+
+    function extractText(data) {
+      if (typeof data === 'string') return data;
+      if (data?.text) return data.text;
+      if (data?.transcription) return data.transcription;
+      if (data?.generated_text) return data.generated_text;
+      if (Array.isArray(data) && data[0]?.text) return data[0].text;
+      if (data == null) return '';
+      return JSON.stringify(data);
+    }
+
+    function sleep(ms) {
+      return new Promise(r => setTimeout(r, ms));
+    }
+
+    async function sendChunk(samples) {
+      if (samples.length < TARGET_SAMPLE_RATE * 0.3) return; // skip very short chunks
+
+      const wav = encodeWAV(samples, TARGET_SAMPLE_RATE);
+      pendingRequests++;
+      renderTranscript();
+
+      try {
+        const text = await transcribeAudio(wav);
+        const cleaned = text.trim();
+        if (cleaned) {
+          transcriptParts.push(cleaned);
+        }
+      } catch (err) {
+        console.error('Transcription error:', err);
+        setStatus(err.message, 'error');
+      } finally {
+        pendingRequests--;
+        renderTranscript();
+        if (isRecording) setStatus('Recording…', 'active');
+        else if (pendingRequests === 0) setStatus('Ready');
+      }
+    }
+
+    async function flushRecordedChunks() {
+      if (recordedChunks.length === 0) return;
+      const merged = mergeFloat32Arrays(recordedChunks);
+      recordedChunks = [];
+      await sendChunk(merged);
+    }
+
+    async function startRecording() {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            echoCancellation: true,
+            noiseSuppression: true,
+          },
+        });
+
+        audioContext = new AudioContext();
+        const inputSampleRate = audioContext.sampleRate;
+        sourceNode = audioContext.createMediaStreamSource(mediaStream);
+        processorNode = audioContext.createScriptProcessor(4096, 1, 1);
+
+        recordedChunks = [];
+        isRecording = true;
+
+        processorNode.onaudioprocess = (e) => {
+          if (!isRecording) return;
+          const input = e.inputBuffer.getChannelData(0);
+          const copy = new Float32Array(input.length);
+          copy.set(input);
+          recordedChunks.push(copy);
+        };
+
+        const silent = audioContext.createGain();
+        silent.gain.value = 0;
+        sourceNode.connect(processorNode);
+        processorNode.connect(silent);
+        silent.connect(audioContext.destination);
+
+        chunkTimer = setInterval(() => {
+          if (recordedChunks.length > 0) {
+            const merged = mergeFloat32Arrays(recordedChunks);
+            recordedChunks = [];
+            sendChunk(downsample(merged, inputSampleRate));
+          }
+        }, CHUNK_INTERVAL_MS);
+
+        micBtn.classList.add('recording');
+        micIcon.style.display = 'none';
+        stopIcon.style.display = 'block';
+        micHint.textContent = 'Tap to stop recording';
+        setStatus('Recording…', 'active');
+      } catch (err) {
+        setStatus('Microphone access denied', 'error');
+        console.error(err);
+      }
+    }
+
+    async function stopRecording() {
+      isRecording = false;
+      clearInterval(chunkTimer);
+      chunkTimer = null;
+
+      if (processorNode) {
+        processorNode.disconnect();
+        processorNode = null;
+      }
+      if (sourceNode) {
+        sourceNode.disconnect();
+        sourceNode = null;
+      }
+
+      const inputSampleRate = audioContext?.sampleRate || 44100;
+
+      if (audioContext) {
+        await audioContext.close();
+        audioContext = null;
+      }
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop());
+        mediaStream = null;
+      }
+
+      micBtn.classList.remove('recording');
+      micIcon.style.display = 'block';
+      stopIcon.style.display = 'none';
+      micHint.textContent = 'Tap to start recording';
+
+      // Send remaining audio
+      if (recordedChunks.length > 0) {
+        setStatus('Transcribing…', 'loading');
+        const merged = mergeFloat32Arrays(recordedChunks);
+        recordedChunks = [];
+        await sendChunk(downsample(merged, inputSampleRate));
+      }
+
+      if (pendingRequests === 0) setStatus('Ready');
+      else setStatus('Finishing transcription…', 'loading');
+    }
+  </script>
+</body>
+</html>
