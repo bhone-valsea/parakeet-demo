@@ -105,44 +105,6 @@
       margin-bottom: 0.5rem;
     }
 
-    /* Token input */
-    .token-row {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .token-input {
-      flex: 1;
-      padding: 0.6rem 0.75rem;
-      border: 1px solid var(--gray-200);
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-family: "SF Mono", "Fira Code", monospace;
-      color: var(--gray-800);
-      background: var(--gray-50);
-      transition: border-color 0.2s;
-    }
-
-    .token-input:focus {
-      outline: none;
-      border-color: var(--purple-400);
-      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
-    }
-
-    .toggle-vis {
-      padding: 0.6rem 0.75rem;
-      border: 1px solid var(--gray-200);
-      border-radius: 8px;
-      background: var(--gray-50);
-      cursor: pointer;
-      font-size: 0.85rem;
-      color: var(--gray-600);
-      white-space: nowrap;
-      transition: background 0.2s;
-    }
-
-    .toggle-vis:hover { background: var(--purple-50); }
-
     /* Model toggle */
     .model-toggle {
       display: grid;
@@ -223,7 +185,14 @@
       50% { box-shadow: 0 4px 32px rgba(239, 68, 68, 0.65); }
     }
 
-    .mic-btn svg { width: 32px; height: 32px; }
+    .mic-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .mic-btn:disabled:hover { transform: none; }
 
     .mic-hint {
       margin-top: 0.75rem;
@@ -312,6 +281,29 @@
       font-size: 0.75rem;
       color: var(--gray-400);
     }
+
+    .localhost-note {
+      display: none;
+      margin-bottom: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      color: #92400e;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .localhost-note.visible { display: block; }
+
+    .localhost-note code {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.8rem;
+      background: rgba(255, 255, 255, 0.6);
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
@@ -324,47 +316,8 @@
       <p class="brand-sub">Speech-to-Text Demo</p>
     </header>
 
-    <div class="card">
-      <div class="card-label">Hugging Face API Token</div>
-      <div class="token-row">
-        <input
-          type="password"
-          id="hfToken"
-          class="token-input"
-          value="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"
-          placeholder="hf_..."
-          autocomplete="off"
-        />
-        <button class="toggle-vis" id="toggleHfToken" type="button">Show</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-label">Replicate API Token</div>
-      <div class="token-row">
-        <input
-          type="password"
-          id="replicateToken"
-          class="token-input"
-          placeholder="r8_..."
-          autocomplete="off"
-        />
-        <button class="toggle-vis" id="toggleReplicateToken" type="button">Show</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-label">ElevenLabs API Key</div>
-      <div class="token-row">
-        <input
-          type="password"
-          id="elevenLabsKey"
-          class="token-input"
-          placeholder="sk_..."
-          autocomplete="off"
-        />
-        <button class="toggle-vis" id="toggleElevenLabsKey" type="button">Show</button>
-      </div>
+    <div class="localhost-note" id="localhostNote">
+      Run via <code>localhost:8080</code> for full functionality — opening as a file blocks API and microphone access.
     </div>
 
     <div class="card">
@@ -414,17 +367,16 @@
       </div>
     </div>
 
-    <footer>Powered by NVIDIA Parakeet on Replicate &amp; ElevenLabs Scribe</footer>
+    <footer>Powered by VALSEA Parakeet &amp; ElevenLabs Scribe</footer>
   </div>
 
   <script>
-    const REPLICATE_PREDICTIONS_URL = 'https://api.replicate.com/v1/predictions';
-    const REPLICATE_MODELS = {
-      '0.6b': 'nvidia/parakeet-tdt-0.6b-v2',
-      '1.1b': 'nvidia/parakeet-tdt-1.1b',
+    const PARAKEET_URLS = {
+      '0.6b': 'https://smasher-baboon-halogen.ngrok-free.dev/transcribe/0.6b',
+      '1.1b': 'https://smasher-baboon-halogen.ngrok-free.dev/transcribe/1.1b',
     };
-
     const ELEVENLABS_STT_URL = 'https://api.elevenlabs.io/v1/speech-to-text';
+    const ELEVENLABS_API_KEY = 'sk_8be0616a508cd57028f426a4f375e89e9fe852293476b809';
 
     const CHUNK_INTERVAL_MS = 3000;
     const TARGET_SAMPLE_RATE = 16000;
@@ -440,12 +392,6 @@
     let pendingRequests = 0;
     let transcriptParts = [];
 
-    const hfToken = document.getElementById('hfToken');
-    const toggleHfToken = document.getElementById('toggleHfToken');
-    const replicateToken = document.getElementById('replicateToken');
-    const toggleReplicateToken = document.getElementById('toggleReplicateToken');
-    const elevenLabsKey = document.getElementById('elevenLabsKey');
-    const toggleElevenLabsKey = document.getElementById('toggleElevenLabsKey');
     const modelBtns = document.querySelectorAll('.model-btn');
     const micBtn = document.getElementById('micBtn');
     const micIcon = document.getElementById('micIcon');
@@ -455,18 +401,17 @@
     const statusText = document.getElementById('statusText');
     const transcriptEl = document.getElementById('transcript');
     const clearBtn = document.getElementById('clearBtn');
+    const localhostNote = document.getElementById('localhostNote');
 
-    function bindTokenToggle(input, button) {
-      button.addEventListener('click', () => {
-        const hidden = input.type === 'password';
-        input.type = hidden ? 'text' : 'password';
-        button.textContent = hidden ? 'Hide' : 'Show';
-      });
+    if (location.protocol === 'file:') {
+      localhostNote.classList.add('visible');
     }
 
-    bindTokenToggle(hfToken, toggleHfToken);
-    bindTokenToggle(replicateToken, toggleReplicateToken);
-    bindTokenToggle(elevenLabsKey, toggleElevenLabsKey);
+    function updateModelUI() {
+      micHint.textContent = isRecording ? 'Tap to stop recording' : 'Tap to start recording';
+      if (pendingRequests === 0) setStatus('Ready');
+      renderTranscript();
+    }
 
     // Model selection
     modelBtns.forEach(btn => {
@@ -475,6 +420,7 @@
         modelBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedModel = btn.dataset.model;
+        updateModelUI();
       });
     });
 
@@ -575,91 +521,30 @@
       return result;
     }
 
-    function wavToDataUrl(wavBuffer) {
-      const bytes = new Uint8Array(wavBuffer);
-      let binary = '';
-      const chunkSize = 0x8000;
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
-      }
-      return `data:audio/wav;base64,${btoa(binary)}`;
-    }
-
-    async function createReplicatePrediction(version, audioUrl, token) {
-      const response = await fetch(REPLICATE_PREDICTIONS_URL, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          Prefer: 'wait=60',
-        },
-        body: JSON.stringify({
-          version,
-          input: { audio: audioUrl },
-        }),
-      });
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.detail || err.error || `Replicate API error ${response.status}`);
-      }
-
-      return response.json();
-    }
-
-    async function pollReplicatePrediction(getUrl, token, maxAttempts = 60) {
-      for (let i = 0; i < maxAttempts; i++) {
-        await sleep(2000);
-        const response = await fetch(getUrl, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!response.ok) {
-          const err = await response.json().catch(() => ({}));
-          throw new Error(err.detail || `Replicate API error ${response.status}`);
-        }
-        const prediction = await response.json();
-        if (['succeeded', 'failed', 'canceled'].includes(prediction.status)) {
-          return prediction;
-        }
-        if (i % 3 === 0) setStatus('Transcribing…', 'loading');
-      }
-      throw new Error('Replicate prediction timed out');
-    }
-
     async function transcribeAudio(wavBuffer) {
       if (selectedModel === 'scribe_v2') {
         return transcribeElevenLabs(wavBuffer);
       }
-      return transcribeReplicate(wavBuffer);
+      if (PARAKEET_URLS[selectedModel]) {
+        return transcribeParakeet(wavBuffer, PARAKEET_URLS[selectedModel]);
+      }
+      throw new Error('Unknown model selected');
     }
 
-    async function transcribeReplicate(wavBuffer) {
-      const token = replicateToken.value.trim();
-      if (!token) throw new Error('Please enter your Replicate API token.');
+    async function transcribeParakeet(wavBuffer, endpoint) {
+      const blob = new Blob([wavBuffer], { type: 'audio/wav' });
+      const formData = new FormData();
+      formData.append('file', blob, 'recording.wav');
 
-      const version = REPLICATE_MODELS[selectedModel];
-      const audioUrl = wavToDataUrl(wavBuffer);
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: formData,
+      });
 
-      let prediction = await createReplicatePrediction(version, audioUrl, token);
-
-      if (!['succeeded', 'failed', 'canceled'].includes(prediction.status)) {
-        prediction = await pollReplicatePrediction(prediction.urls.get, token);
-      }
-
-      if (prediction.status === 'failed') {
-        throw new Error(prediction.error || 'Replicate prediction failed');
-      }
-      if (prediction.status === 'canceled') {
-        throw new Error('Replicate prediction was canceled');
-      }
-
-      return extractText(prediction.output);
+      return parseTranscriptionResponse(response);
     }
 
     async function transcribeElevenLabs(wavBuffer) {
-      const apiKey = elevenLabsKey.value.trim();
-      if (!apiKey) throw new Error('Please enter your ElevenLabs API key.');
-
       const blob = new Blob([wavBuffer], { type: 'audio/wav' });
       const formData = new FormData();
       formData.append('file', blob, 'recording.wav');
@@ -668,32 +553,74 @@
       const response = await fetch(ELEVENLABS_STT_URL, {
         method: 'POST',
         headers: {
-          'xi-api-key': apiKey,
+          'xi-api-key': ELEVENLABS_API_KEY,
         },
         body: formData,
       });
 
+      return parseTranscriptionResponse(response);
+    }
+
+    async function parseTranscriptionResponse(response) {
+      const raw = await response.text();
+
       if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        const message = err.detail?.message
-          || (typeof err.detail === 'string' ? err.detail : null)
-          || err.message
-          || `API error ${response.status}`;
-        throw new Error(message);
+        let message = raw || `API error ${response.status}`;
+        try {
+          const err = JSON.parse(raw);
+          message = extractText(err) || err.detail?.message
+            || (typeof err.detail === 'string' ? err.detail : null)
+            || err.error
+            || err.message
+            || message;
+        } catch {
+          // use raw text as error message
+        }
+        throw new Error(toTranscriptString(message) || `API error ${response.status}`);
       }
 
-      const data = await response.json();
-      return extractText(data);
+      if (!raw.trim()) return '';
+
+      try {
+        return toTranscriptString(extractText(JSON.parse(raw)));
+      } catch {
+        return toTranscriptString(raw);
+      }
     }
 
     function extractText(data) {
       if (typeof data === 'string') return data;
-      if (data?.text) return data.text;
-      if (data?.transcription) return data.transcription;
-      if (data?.generated_text) return data.generated_text;
-      if (Array.isArray(data) && data[0]?.text) return data[0].text;
       if (data == null) return '';
-      return JSON.stringify(data);
+
+      // Nested server response: { text: { text: "Hello world", score: ... } }
+      if (data.text && typeof data.text === 'object' && typeof data.text.text === 'string') {
+        return data.text.text;
+      }
+
+      if (typeof data.text === 'string') return data.text;
+      if (typeof data.transcription === 'string') return data.transcription;
+      if (typeof data.generated_text === 'string') return data.generated_text;
+      if (Array.isArray(data) && typeof data[0]?.text === 'string') return data[0].text;
+      if (typeof data.output === 'string') return data.output;
+      if (typeof data.result === 'string') return data.result;
+
+      if (typeof data === 'object') {
+        const nested = data.text ?? data.transcription ?? data.generated_text ?? data.output ?? data.result;
+        if (typeof nested === 'string') return nested;
+        if (nested && typeof nested === 'object' && typeof nested.text === 'string') return nested.text;
+        if (nested != null && typeof nested !== 'object') return String(nested);
+      }
+
+      if (typeof data === 'object') return JSON.stringify(data);
+      return String(data);
+    }
+
+    function toTranscriptString(value) {
+      if (value == null) return '';
+      if (typeof value === 'string') return value.trim();
+      if (typeof value === 'number' || typeof value === 'boolean') return String(value).trim();
+      if (typeof value === 'object') return extractText(value).trim();
+      return String(value).trim();
     }
 
     function sleep(ms) {
@@ -709,7 +636,7 @@
 
       try {
         const text = await transcribeAudio(wav);
-        const cleaned = text.trim();
+        const cleaned = toTranscriptString(text);
         if (cleaned) {
           transcriptParts.push(cleaned);
         }
