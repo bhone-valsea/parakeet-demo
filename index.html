@@ -3,18 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VALSEA · Speech-to-Text Demo</title>
+  <title>valsea · Speech-to-Text &amp; Translation</title>
   <style>
     :root {
-      --purple-50: #faf5ff;
-      --purple-100: #f3e8ff;
-      --purple-200: #e9d5ff;
-      --purple-400: #c084fc;
-      --purple-500: #a855f7;
-      --purple-600: #9333ea;
-      --purple-700: #7e22ce;
-      --purple-800: #6b21a8;
-      --purple-900: #581c87;
+      --brand-deep: #310098;
+      --brand-violet: #8100c7;
+      --brand-gradient: linear-gradient(135deg, #310098 0%, #8100c7 100%);
+      --purple-50: #f5f0ff;
+      --purple-100: #ebe3ff;
+      --purple-200: #d4c4f5;
+      --purple-400: #a855f7;
+      --purple-500: #9333ea;
+      --purple-600: #8100c7;
+      --purple-700: #5a00a8;
+      --purple-800: #310098;
+      --purple-900: #24006e;
       --gray-50: #f9fafb;
       --gray-100: #f3f4f6;
       --gray-200: #e5e7eb;
@@ -26,64 +29,58 @@
       --red-500: #ef4444;
       --green-500: #22c55e;
       --radius: 12px;
-      --shadow: 0 4px 24px rgba(107, 33, 168, 0.08);
+      --shadow: 0 4px 24px rgba(49, 0, 152, 0.1);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background: linear-gradient(160deg, var(--purple-50) 0%, #fff 40%, var(--gray-50) 100%);
+      background: linear-gradient(160deg, var(--purple-50) 0%, #fff 35%, #f8f5ff 100%);
       color: var(--gray-800);
-      min-height: 100vh;
+      height: 100vh;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2rem 1rem;
+      padding: 1.25rem 1rem;
     }
 
     .container {
       width: 100%;
       max-width: 640px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
 
     /* Header / Branding */
     .brand {
       text-align: center;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
+      flex-shrink: 0;
     }
 
     .brand-logo {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.25rem;
+      display: block;
+      margin-bottom: 0.5rem;
     }
 
-    .brand-icon {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, var(--purple-600), var(--purple-800));
+    .brand-logo-img {
+      height: 52px;
+      width: auto;
       border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-weight: 700;
-      font-size: 1.1rem;
-    }
-
-    .brand-name {
-      font-size: 1.75rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: var(--purple-800);
+      display: block;
+      margin: 0 auto;
+      box-shadow: 0 4px 16px rgba(49, 0, 152, 0.25);
     }
 
     .brand-sub {
       font-size: 0.85rem;
-      color: var(--gray-500);
+      color: var(--purple-700);
       letter-spacing: 0.02em;
+      opacity: 0.85;
     }
 
     /* Card */
@@ -92,8 +89,8 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       border: 1px solid var(--purple-100);
-      padding: 1.5rem;
-      margin-bottom: 1rem;
+      padding: 1.25rem;
+      margin-bottom: 0.75rem;
     }
 
     .card-label {
@@ -138,7 +135,7 @@
       display: block;
     }
 
-    .model-btn.active .name { color: var(--purple-800); }
+    .model-btn.active .name { color: var(--brand-deep); }
 
     .model-btn .desc {
       font-size: 0.75rem;
@@ -152,7 +149,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 1.5rem 0 0.5rem;
+      padding: 1rem 0 0.25rem;
     }
 
     .mic-btn {
@@ -161,12 +158,12 @@
       border-radius: 50%;
       border: none;
       cursor: pointer;
-      background: linear-gradient(135deg, var(--purple-600), var(--purple-800));
+      background: var(--brand-gradient);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 20px rgba(107, 33, 168, 0.35);
+      box-shadow: 0 4px 20px rgba(49, 0, 152, 0.35);
       transition: transform 0.15s, box-shadow 0.15s;
       position: relative;
     }
@@ -229,8 +226,8 @@
 
     /* Transcript */
     .transcript-box {
-      min-height: 160px;
-      max-height: 320px;
+      min-height: 120px;
+      max-height: 180px;
       overflow-y: auto;
       padding: 1rem;
       background: var(--gray-50);
@@ -277,14 +274,16 @@
 
     footer {
       text-align: center;
-      margin-top: 1.5rem;
+      margin-top: auto;
+      padding-top: 0.75rem;
       font-size: 0.75rem;
       color: var(--gray-400);
+      flex-shrink: 0;
     }
 
     .localhost-note {
       display: none;
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
       padding: 0.75rem 1rem;
       border-radius: 8px;
       background: #fef3c7;
@@ -304,70 +303,288 @@
       padding: 0.1rem 0.35rem;
       border-radius: 4px;
     }
+
+    /* Main tabs */
+    .main-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      background: var(--gray-100);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .main-tab {
+      padding: 0.7rem 1rem;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: var(--gray-600);
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .main-tab.active {
+      background: #fff;
+      color: var(--brand-deep);
+      box-shadow: 0 1px 4px rgba(49, 0, 152, 0.12);
+    }
+
+    .main-tab:hover:not(.active) {
+      color: var(--brand-violet);
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .tab-panels {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .tab-panel {
+      display: none;
+      height: 100%;
+      overflow-y: auto;
+      animation: tabFadeIn 0.25s ease;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .tab-panel .card:last-child {
+      margin-bottom: 0;
+    }
+
+    .model-toggle-2 {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .text-input,
+    .lang-select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: var(--gray-800);
+      background: var(--gray-50);
+      transition: border-color 0.2s;
+    }
+
+    .text-input {
+      min-height: 80px;
+      max-height: 120px;
+      resize: none;
+      line-height: 1.6;
+    }
+
+    .text-input:focus,
+    .lang-select:focus {
+      outline: none;
+      border-color: var(--purple-400);
+      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+    }
+
+    .lang-select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      padding-right: 2rem;
+    }
+
+    .translate-btn {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: 8px;
+      background: var(--brand-gradient);
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 2px 12px rgba(49, 0, 152, 0.25);
+    }
+
+    .translate-btn:hover { transform: translateY(-1px); }
+    .translate-btn:active { transform: translateY(0); }
+
+    .translate-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .translation-output {
+      min-height: 80px;
+      max-height: 120px;
+      overflow-y: auto;
+      padding: 1rem;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: 1rem;
+      line-height: 1.65;
+      color: var(--gray-800);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .translation-output.empty {
+      color: var(--gray-400);
+      font-style: italic;
+    }
+
+    .response-time {
+      margin-top: 0.5rem;
+      font-size: 0.78rem;
+      color: var(--gray-500);
+      text-align: right;
+    }
+
+    .response-time .ms {
+      font-weight: 600;
+      color: var(--purple-600);
+      font-family: "SF Mono", "Fira Code", monospace;
+    }
+
+    .field-spacer { margin-top: 1rem; }
   </style>
 </head>
 <body>
   <div class="container">
     <header class="brand">
       <div class="brand-logo">
-        <div class="brand-icon">V</div>
-        <span class="brand-name">VALSEA</span>
+        <img src="valsea-logo.png" alt="valsea" class="brand-logo-img" />
       </div>
-      <p class="brand-sub">Speech-to-Text Demo</p>
+      <p class="brand-sub">Speech-to-Text &amp; Translation Demo</p>
     </header>
 
     <div class="localhost-note" id="localhostNote">
       Run via <code>localhost:8080</code> for full functionality — opening as a file blocks API and microphone access.
     </div>
 
-    <div class="card">
-      <div class="card-label">Model</div>
-      <div class="model-toggle">
-        <button class="model-btn active" data-model="0.6b" type="button">
-          <span class="name">Parakeet 0.6b</span>
-          <span class="desc">Faster, lighter</span>
-        </button>
-        <button class="model-btn" data-model="1.1b" type="button">
-          <span class="name">Parakeet 1.1b</span>
-          <span class="desc">More accurate, heavier</span>
-        </button>
-        <button class="model-btn" data-model="scribe_v2" type="button">
-          <span class="name">ElevenLabs Scribe v2</span>
-          <span class="desc">High accuracy STT</span>
-        </button>
-      </div>
-    </div>
+    <nav class="main-tabs" role="tablist">
+      <button class="main-tab active" id="tab-stt" data-tab="stt" type="button" role="tab" aria-selected="true" aria-controls="panel-stt">Speech to Text</button>
+      <button class="main-tab" id="tab-translation" data-tab="translation" type="button" role="tab" aria-selected="false" aria-controls="panel-translation">Translation</button>
+    </nav>
 
-    <div class="card">
-      <div class="mic-section">
-        <button class="mic-btn" id="micBtn" type="button" aria-label="Start recording">
-          <svg id="micIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            <line x1="12" y1="19" x2="12" y2="23"/>
-            <line x1="8" y1="23" x2="16" y2="23"/>
-          </svg>
-          <svg id="stopIcon" viewBox="0 0 24 24" fill="currentColor" style="display:none; width:28px; height:28px;">
-            <rect x="6" y="6" width="12" height="12" rx="2"/>
-          </svg>
-        </button>
-        <p class="mic-hint" id="micHint">Tap to start recording</p>
-        <div class="status-bar">
-          <span class="status-dot" id="statusDot"></span>
-          <span id="statusText">Ready</span>
+    <div class="tab-panels">
+      <div class="tab-panel active" id="panel-stt" role="tabpanel" aria-labelledby="tab-stt">
+        <div class="card">
+          <div class="card-label">Model</div>
+          <div class="model-toggle">
+            <button class="model-btn active" data-model="0.6b" type="button">
+              <span class="name">Parakeet 0.6b</span>
+              <span class="desc">Faster, lighter</span>
+            </button>
+            <button class="model-btn" data-model="1.1b" type="button">
+              <span class="name">Parakeet 1.1b</span>
+              <span class="desc">More accurate, heavier</span>
+            </button>
+            <button class="model-btn" data-model="scribe_v2" type="button">
+              <span class="name">ElevenLabs Scribe v2</span>
+              <span class="desc">High accuracy STT</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="mic-section">
+            <button class="mic-btn" id="micBtn" type="button" aria-label="Start recording">
+              <svg id="micIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+              <svg id="stopIcon" viewBox="0 0 24 24" fill="currentColor" style="display:none; width:28px; height:28px;">
+                <rect x="6" y="6" width="12" height="12" rx="2"/>
+              </svg>
+            </button>
+            <p class="mic-hint" id="micHint">Tap to start recording</p>
+            <div class="status-bar">
+              <span class="status-dot" id="statusDot"></span>
+              <span id="statusText">Ready</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">Live Transcript</div>
+          <div class="transcript-box empty" id="transcript">Your transcript will appear here as you speak…</div>
+          <div class="transcript-actions">
+            <button class="clear-btn" id="clearBtn" type="button">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-translation" role="tabpanel" aria-labelledby="tab-translation">
+        <div class="card">
+          <div class="card-label">Source Text</div>
+          <textarea
+            id="sourceText"
+            class="text-input"
+            placeholder="Enter text to translate…"
+            rows="3"
+          ></textarea>
+
+          <div class="field-spacer">
+            <div class="card-label">Target Language</div>
+            <select id="targetLang" class="lang-select">
+              <option value="Vietnamese">Vietnamese</option>
+              <option value="English">English</option>
+              <option value="Thai">Thai</option>
+              <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+              <option value="Mandarin">Mandarin</option>
+              <option value="Singlish">Singlish</option>
+            </select>
+          </div>
+
+          <div class="field-spacer">
+            <div class="card-label">Model</div>
+            <div class="model-toggle model-toggle-2">
+              <button class="model-btn active" data-llm="llama-3.1-8b-instant" type="button">
+                <span class="name">Llama 3.1 8B</span>
+                <span class="desc">Faster, lighter</span>
+              </button>
+              <button class="model-btn" data-llm="llama-3.3-70b-versatile" type="button">
+                <span class="name">Llama 3.3 70B</span>
+                <span class="desc">More accurate, heavier</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="field-spacer">
+            <button class="translate-btn" id="translateBtn" type="button">Translate</button>
+          </div>
+
+          <div class="field-spacer">
+            <div class="card-label">Translation Output</div>
+            <div class="translation-output empty" id="translationOutput">Translated text will appear here…</div>
+            <div class="response-time" id="responseTime"></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-label">Live Transcript</div>
-      <div class="transcript-box empty" id="transcript">Your transcript will appear here as you speak…</div>
-      <div class="transcript-actions">
-        <button class="clear-btn" id="clearBtn" type="button">Clear</button>
-      </div>
-    </div>
-
-    <footer>Powered by VALSEA Parakeet &amp; ElevenLabs Scribe</footer>
+    <footer>Powered by VALSEA Parakeet, ElevenLabs Scribe &amp; Groq Llama 3</footer>
   </div>
 
   <script>
@@ -377,6 +594,8 @@
     };
     const ELEVENLABS_STT_URL = 'https://api.elevenlabs.io/v1/speech-to-text';
     const ELEVENLABS_API_KEY = 'sk_8be0616a508cd57028f426a4f375e89e9fe852293476b809';
+    const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+    const GROQ_API_KEY = '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';
 
     const CHUNK_INTERVAL_MS = 3000;
     const TARGET_SAMPLE_RATE = 16000;
@@ -391,8 +610,12 @@
     let chunkTimer = null;
     let pendingRequests = 0;
     let transcriptParts = [];
+    let selectedLlm = 'llama-3.1-8b-instant';
 
-    const modelBtns = document.querySelectorAll('.model-btn');
+    const modelBtns = document.querySelectorAll('#panel-stt .model-toggle .model-btn');
+    const llmBtns = document.querySelectorAll('#panel-translation .model-toggle-2 .model-btn');
+    const mainTabs = document.querySelectorAll('.main-tab');
+    const tabPanels = document.querySelectorAll('.tab-panel');
     const micBtn = document.getElementById('micBtn');
     const micIcon = document.getElementById('micIcon');
     const stopIcon = document.getElementById('stopIcon');
@@ -402,9 +625,116 @@
     const transcriptEl = document.getElementById('transcript');
     const clearBtn = document.getElementById('clearBtn');
     const localhostNote = document.getElementById('localhostNote');
+    const sourceText = document.getElementById('sourceText');
+    const targetLang = document.getElementById('targetLang');
+    const translateBtn = document.getElementById('translateBtn');
+    const translationOutput = document.getElementById('translationOutput');
+    const responseTimeEl = document.getElementById('responseTime');
 
     if (location.protocol === 'file:') {
       localhostNote.classList.add('visible');
+    }
+
+    // Main tab switching
+    mainTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.tab;
+        mainTabs.forEach(t => {
+          const isActive = t.dataset.tab === target;
+          t.classList.toggle('active', isActive);
+          t.setAttribute('aria-selected', isActive);
+        });
+        tabPanels.forEach(panel => {
+          const isActive = panel.id === `panel-${target}`;
+          panel.classList.toggle('active', isActive);
+          if (isActive) panel.scrollTop = 0;
+        });
+      });
+    });
+
+    // LLM model selection
+    llmBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        llmBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedLlm = btn.dataset.llm;
+      });
+    });
+
+    translateBtn.addEventListener('click', () => translateText());
+
+    async function translateText() {
+      const text = sourceText.value.trim();
+      const language = targetLang.value;
+
+      if (!text) {
+        setTranslationError('Please enter source text to translate.');
+        return;
+      }
+
+      const langInstruction = language === 'Singlish'
+        ? 'Singaporean English (Singlish) — natural colloquial Singlish with appropriate particles'
+        : language;
+
+      translateBtn.disabled = true;
+      translationOutput.textContent = 'Translating…';
+      translationOutput.classList.remove('empty');
+      responseTimeEl.textContent = '';
+
+      const start = performance.now();
+
+      try {
+        const response = await fetch(GROQ_API_URL, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${GROQ_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: selectedLlm,
+            messages: [
+              {
+                role: 'system',
+                content: `You are a professional translator. Translate the user's text into ${langInstruction}. Return only the translated text with no explanations, notes, or quotation marks.`,
+              },
+              { role: 'user', content: text },
+            ],
+            temperature: 0.3,
+          }),
+        });
+
+        const elapsed = Math.round(performance.now() - start);
+        const raw = await response.text();
+
+        if (!response.ok) {
+          let message = raw || `API error ${response.status}`;
+          try {
+            const err = JSON.parse(raw);
+            message = err.error?.message || err.message || message;
+          } catch { /* use raw */ }
+          throw new Error(message);
+        }
+
+        const data = JSON.parse(raw);
+        const translated = data.choices?.[0]?.message?.content?.trim() || '';
+
+        if (!translated) throw new Error('No translation returned from API.');
+
+        translationOutput.textContent = translated;
+        translationOutput.classList.remove('empty');
+        responseTimeEl.innerHTML = `Response time: <span class="ms">${elapsed} ms</span>`;
+      } catch (err) {
+        console.error('Translation error:', err);
+        setTranslationError(err.message);
+        responseTimeEl.textContent = '';
+      } finally {
+        translateBtn.disabled = false;
+      }
+    }
+
+    function setTranslationError(message) {
+      translationOutput.textContent = message;
+      translationOutput.classList.add('empty');
     }
 
     function updateModelUI() {
